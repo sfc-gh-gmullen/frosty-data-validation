@@ -33,7 +33,7 @@ CREATE OR REPLACE PROCEDURE DATA_VALIDATION(validation_db varchar, validation_sc
         var stmt_getcolumn_list = snowflake.createStatement( { sqlText: "SELECT \"column_name\" AS NAME FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) where \"kind\" = 'COLUMN';"} );
              
         //IF NO PRIMARY KEY GENERATE ONE BY COMBINING ALL COLUMNS WITH MD5 
-        if(PRIMARY_KEY_COLUMN_NAME is null)
+        if(PRIMARY_KEY_COLUMN_NAME == null || PRIMARY_KEY_COLUMN_NAME == undefined)
         {
           var res_columns = stmt_getcolumn_list.execute();
           var md5_column ="";
@@ -72,7 +72,6 @@ CREATE OR REPLACE PROCEDURE DATA_VALIDATION(validation_db varchar, validation_sc
       table_name = rs_rules.getColumnValue('TABLE_NAME');
       field_name = rs_rules.getColumnValue('FIELD_NAME');
       where_condition = rs_rules.getColumnValue('WHERE_CONDITION');    
-//TODO      //dynamically generate md5 hash
 
     if (is_first_cte) {sql_cte_text = "WITH "; rule_col =rule_name} else {sql_cte_text = sql_cte_text + "\n\n, "; rule_col += ","+rule_name}
     
@@ -85,10 +84,12 @@ CREATE OR REPLACE PROCEDURE DATA_VALIDATION(validation_db varchar, validation_sc
     is_first_cte = false;                   
      }//END RULES
      
-  sql_cte_text = sql_cte_text + "\n\nSELECT " + rule_col + "," + table_name+".* FROM (\nSELECT *," + md5_column + "\nFROM " + table_name +") " + table_name + sql_join_text + where_clause;
+    sql_cte_text = sql_cte_text + "\n\nSELECT " + rule_col + "," + table_name+".* FROM (\nSELECT *," + md5_column + "\nFROM " + table_name +") " + table_name + sql_join_text + where_clause;
+    var error_table_name = "ERROR_" + table_name;
+    sql_cte_text = "create table if not exists " + error_table_name + " as " + sql_cte_text;
         try{
-//       snowflake.createStatement( { sqlText: sql_cte_text } ).execute();                                  
-return sql_cte_text;
+          snowflake.createStatement( { sqlText: sql_cte_text } ).execute();                                  
+          return error_table_name;
        }
        catch(e){
           return e;

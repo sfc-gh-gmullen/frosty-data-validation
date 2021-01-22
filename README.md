@@ -19,13 +19,19 @@ An [External Table](https://docs.snowflake.com/en/user-guide/tables-external-int
 Once this strategy is defined for the business for a data load process then additional business specific data rules can then be applied. Again this would be a great place for additional tooling to come into play, but if our goal is to simplify the architecture footprint or there are constraints with procuring additional tools then consider the following methods as examples for moving forward.
 
 ### Method 1 - Dynamic Common Table Expression (CTE) from Business Rules 
-Method 1 describes a stored procedure which is used to generate a Common Table Expression (CTE) for each of the business rules that are defined in the Validation Rules table. First a table is loaded with metadata about the Business Rule and the associated WHERE clause that will allow for the process to determine which rules fall outside the bounds defined by the rules. In the example provided we use Citibike Trips data that are leveraged as part of our online [Zero to Snowflake labs](https://s3.amazonaws.com/snowflake-workshop-lab/InpersonZTS_LabGuide.pdf). The data can be connected to via an External Stage to this S3 bucket URL (s3://snowflake-workshop-lab/citibike-trips).
+Method 1 describes a stored procedure which is used to generate a Common Table Expression (CTE) for each of the business rules that are defined in the Validation Rules table. First a table is loaded with metadata about the Business Rule and the associated WHERE clause that will allow for the process to determine which rules fall outside the bounds defined by the rules. In the example provided we use Citibike Trips data that are leveraged as part of our online [Zero to Snowflake labs](https://s3.amazonaws.com/snowflake-workshop-lab/InpersonZTS_LabGuide.pdf). The data can be connected to via an External Stage to this S3 bucket URL [(s3://snowflake-workshop-lab/citibike-trips)](s3://snowflake-workshop-lab/citibike-trips).
 
 The example business rules that we will conduct are:
 * bike rides cannot exceed 24 hours
 * Riders cannot be older than 150 years old
 * The starttime must be a valid date and time
 
+The first step will to be to generate a table to hold all of our business rules found [here](Method1/validation_rules.sql). We write criteria against the base table that will be applied to the WHERE clause in the CTE. Second, the [Data Validation](Method1/validation_proc.sql) stored procedure(SP) will read the business rules tables. For each base table, the SP gathers the rule collection and for each rule a CTE is created. The CTEs are joined back to the base table with a Primary Key. The stored procedure has an optional PK field which will help for more efficient joins back to the base table, but if a PK does not exist then the procedure will generate an MD5 hash based on the data in a row for the purposes of the join.
+
+-table
+--rule
+
+The net result of the procedure is an error table dynamically generated with data points for each observation/row and its associated error column.
 
 **Pros**
 All business rules are kept in a single table repository. This centralizes all the rules and makes them easy to manage. Rules can be deprecated through a start/end date allowing them to naturally expire or manual obsolescence.
@@ -38,9 +44,48 @@ Any time you create a dynamic process, the probability of error due to complicat
 Complicated business rules can be defined in more robust SQL. Cross database checks can be leveraged to include other data domains or lookup tables. 
 
 **Cons**
-The views, if not well managed, can create sprawl that makes the views difficult to understand or manage from a broader perspective.  Managin the lifecycle of a view is a manual or external process based on metadata. 
+The views, if not well managed, can create sprawl that makes the views difficult to understand or manage from a broader perspective.  Managing the lifecycle of a view is a manual or external process based on metadata.
+
+### Method 3 - External Tables
+
+**Pros**
+Validates data from blob storage without moving into Snowflake. Benefits pre-validating the data before moving it into Snowflake allowing for remediation closer to the source.
+
+**Cons**
+Some latency as a result of the data being outside of Snowflake.
 
 ## Example Data and Rules
+
+Snowflake demos have been oriented around Citibike data that is provided publicly on their [website](https://www.citibikenyc.com/system-data). Citibike is a bike shareing program in New York. The data that is provided from them is real, de-identified observations of bike rides in NY. Snowflake provides a copy of this data for labs that can be accessed here
+[(s3://snowflake-workshop-lab/citibike-trips)](s3://snowflake-workshop-lab/citibike-trips). This will be the data used as an example for this template.
+
+Example Data:
+
+|TRIPDURATION|STARTTIME|STOPTIME|START_STATION_ID|START_STATION_NAME|START_STATION_LATITUDE|START_STATION_LONGITUDE|END_STATION_ID|END_STATION_NAME|END_STATION_LATITUDE|END_STATION_LONGITUDE|BIKEID|MEMBERSHIP_TYPE|USERTYPE|BIRTH_YEAR|GENDER|
+|__|_|_|_|_|_|_|_|_|_|_|_|_|_|_|__|
+|1695|2013-06-09 15:07:05.000|2013-06-09 15:35:20.000|328|Watts St & Greenwich St|40.72405549|-74.00965965|195|Liberty St & Broadway|40.70905623|-74.01043382|17652||Customer||0|
+|1469|2013-06-09 15:07:05.000|2013-06-09 15:31:34.000|417|Barclay St & Church St|40.71291224|-74.01020234|232|Cadman Plaza E & Tillary St|40.69597683|-73.99014892|15785||Customer||0|
+|1855|2013-06-09 15:07:06.000|2013-06-09 15:38:01.000|306|Cliff St & Fulton St|40.70823502|-74.00530063|309|Murray St & West St|40.7149787|-74.013012|15168||Subscriber|1971|1|
+
+The example business rules that we will conduct are:
+* bike rides cannot exceed 24 hours
+* Riders cannot be older than 150 years old
+* The starttime must be a valid date and time
+
+This will translate into the following criteria in ANSI SQL:
+* tripduration > (60*60*24)
+* date_from_parts(birth_year,month(current_Date()),day(current_date())) < dateadd(year,-150,current_date())
+* IFF(TRY_TO_DATE(STARTTIME::VARCHAR) IS NOT NULL,FALSE,TRUE)
+
+In the first rule the tripduration is recorded in seconds, so we multiple 60 seconds by 60 minutes by 24 hours to result in 1 day. I assumed that a bike ride would not lapse 24 hours, but upon inspection of the example data by running this rule we find that there are several observations that are 
+
+In the second rule we are provided the birth year, so we generate a date from this using the DATE_FROM_PARTS functions and compare it to today's date - 150 years.
+
+In the final rule we simply attempt to convert a timestamp to a date to verify that it is valid.
+
+## Error Reporting with SnowSight
+
+
 
 ## Maintainers
 
