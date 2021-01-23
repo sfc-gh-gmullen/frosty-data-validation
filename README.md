@@ -59,13 +59,14 @@ Some latency as a result of the data being outside of Snowflake.
 Snowflake demos have been oriented around Citibike data that is provided publicly on their [website](https://www.citibikenyc.com/system-data). Citibike is a bike shareing program in New York. The data that is provided from them is real, de-identified observations of bike rides in NY. Snowflake provides a copy of this data for labs that can be accessed here
 [(s3://snowflake-workshop-lab/citibike-trips)](s3://snowflake-workshop-lab/citibike-trips). This will be the data used as an example for this template.
 
-Example Data:
 
-|TRIPDURATION|STARTTIME|STOPTIME|START_STATION_ID|START_STATION_NAME|START_STATION_LATITUDE|START_STATION_LONGITUDE|END_STATION_ID|END_STATION_NAME|END_STATION_LATITUDE|END_STATION_LONGITUDE|BIKEID|MEMBERSHIP_TYPE|USERTYPE|BIRTH_YEAR|GENDER|
-|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|
-|1695|2013-06-09 15:07:05.000|2013-06-09 15:35:20.000|328|Watts St & Greenwich St|40.72405549|-74.00965965|195|Liberty St & Broadway|40.70905623|-74.01043382|17652||Customer||0|
-|1469|2013-06-09 15:07:05.000|2013-06-09 15:31:34.000|417|Barclay St & Church St|40.71291224|-74.01020234|232|Cadman Plaza E & Tillary St|40.69597683|-73.99014892|15785||Customer||0|
-|1855|2013-06-09 15:07:06.000|2013-06-09 15:38:01.000|306|Cliff St & Fulton St|40.70823502|-74.00530063|309|Murray St & West St|40.7149787|-74.013012|15168||Subscriber|1971|1|
+Example Data:
+ 
+  |TRIPDURATION|STARTTIME|STOPTIME|START_STATION_ID|START_STATION_NAME|START_STATION_LATITUDE|START_STATION_LONGITUDE|END_STATION_ID|END_STATION_NAME|END_STATION_LATITUDE|END_STATION_LONGITUDE|BIKEID|MEMBERSHIP_TYPE|USERTYPE|BIRTH_YEAR|GENDER|
+ |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+ |1695|2013-06-09 15:07:05.000|2013-06-09 15:35:20.000|328|Watts St & Greenwich St|40.72405549|-74.00965965|195|Liberty St & Broadway|40.70905623|-74.01043382|17652||Customer||0|
+ |1469|2013-06-09 15:07:05.000|2013-06-09 15:31:34.000|417|Barclay St & Church St|40.71291224|-74.01020234|232|Cadman Plaza E & Tillary St|40.69597683|-73.99014892|15785||Customer||0|
+ |1855|2013-06-09 15:07:06.000|2013-06-09 15:38:01.000|306|Cliff St & Fulton St|40.70823502|-74.00530063|309|Murray St & West St|40.7149787|-74.013012|15168||Subscriber|1971|1|
 
 The example business rules that we will conduct are:
 * bike rides cannot exceed 24 hours
