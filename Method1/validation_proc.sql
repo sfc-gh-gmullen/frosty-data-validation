@@ -94,7 +94,7 @@ $$
       is_first_cte = false;
      }//END RULES
 
-    sql_cte_text = sql_cte_text + "\n\nSELECT " + rule_col + "," + table_name + ".* FROM (\nSELECT *," + md5_column + "\nFROM " + db_name + "." + schema_name + "." + table_name +") " + table_name + sql_join_text + where_clause;
+    sql_cte_text = sql_cte_text + "\n\nSELECT current_timestamp() validated_timestamp," + rule_col + ") error_json," + table_name+".* FROM (\nSELECT *," + md5_column + "\nFROM " + db_name + "." + schema_name + "." + table_name + ") " + table_name + sql_join_text + where_clause;
     var error_table_name = "ERROR_" + table_name;
 
     //CHECK IF TABLE EXISTS. CREATE OR INSERT.
