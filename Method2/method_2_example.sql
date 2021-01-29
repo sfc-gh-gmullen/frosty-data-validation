@@ -3,7 +3,7 @@
     test)
 */
 
-CREATE SCHEMA validation;
+CREATE SCHEMA IF NOT EXISTS validation;
 
 /*
     Alternatively, for an organization that might have hundreds of tests, you may want to
@@ -23,6 +23,7 @@ CREATE SCHEMA validation;
     1) Return trips that are longer than 24 hours
     2) Return birth years that are older than 150 years
     3) Return trips where the start time was more than 25 years ago
+    4) Return duplicates in the data
 
     Avoid using a SELECT * in your views, since you will get syntax
     errors as the underlying table adds or drops tables. If you have a primary
@@ -59,6 +60,18 @@ CREATE OR REPLACE VIEW validation.trips_inaccurate_starttime AS
     WHERE DATEDIFF('year', starttime, CURRENT_DATE()) > 25
 ;
 
+CREATE OR REPLACE VIEW validation.trips_duplicates AS
+    SELECT
+         starttime
+        ,start_station_id
+        ,bikeid
+        ,tripduration
+        ,COUNT(*) AS number_of_duplicates
+    FROM demo.trips
+    GROUP BY 1,2,3,4
+    HAVING COUNT(*) > 1
+;
+
 -- Add all additional tests here, each as an individual view
 
 
@@ -92,6 +105,14 @@ CREATE OR REPLACE VIEW all_errors AS
         ,object_construct(*) AS error
     FROM validation.trips_inaccurate_starttime
 
+    UNION ALL
+
+    SELECT
+         'TRIPS' AS error_in_table
+        ,'Duplicates found' AS error_message
+        ,object_construct(*) AS error
+    FROM validation.trips_duplicates
+
     -- Add all views from the previous step here
 ;
 
@@ -109,3 +130,6 @@ CREATE OR REPLACE VIEW all_errors_aggregated AS
     FROM validation.all_errors
     GROUP BY 1,2
 ;
+
+SELECT *
+FROM validation.all_errors_aggregated;
