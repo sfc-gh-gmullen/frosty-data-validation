@@ -12,13 +12,13 @@ The following methods used to validate data have their own unique advantages and
 <img src="images/Data_Validation_w_ Notes.png" alt="Data Validation" title="Data Validation" />
 In both of the following methods, data comes from an external source. There are three distinct routes to load data into Snowflake. One route is to be  Extracted and Loaded through an ETL/ELT tool or custom application (e.g. python) and delivered to a staging table in Snowflake. Alternatively, data is loaded into a customer managed blob store (i.e. AWS S3, Azure Blob/ADLSG2, or GCP GCS) where Snowflake can be granted direct access to the relative location through an [External Stage](https://docs.snowflake.com/en/user-guide/data-load-bulk.html). Similarly, SnowSQL or the WebUI (with a compressed 50MB limitation for hte UI) can be used to bulk load data from an on-prem data source to a stage table. In any of those cases the primary objective is to load data into a "staging" or "landing" table in Snowflake. This table will collect all the data that is loaded into Snowflake.
 
-The [VALIDATE](https://docs.snowflake.com/en/sql-reference/functions/validate.html) function can validate record level failures of past COPY commands. By default the COPY command will pass/fail a file that is loaded, but if the desire is to know which records have failed initial data loads then VALIDATE will be a good first stop towards 
+The [VALIDATE](https://docs.snowflake.com/en/sql-reference/functions/validate.html) function can validate record level failures of past COPY commands. By default the COPY command will pass/fail a file that is loaded, but if the desire is to know which records have failed initial data loads then VALIDATE will be a good first stop towards
 
-An [External Table](https://docs.snowflake.com/en/user-guide/tables-external-intro.html) can be leveraged to preemptively access the data in a customer managed blob store where views and queries can validate the data before an attempted data load. 
+An [External Table](https://docs.snowflake.com/en/user-guide/tables-external-intro.html) can be leveraged to preemptively access the data in a customer managed blob store where views and queries can validate the data before an attempted data load.
 
 Once this strategy is defined for the business for a data load process then additional business specific data rules can then be applied. Again this would be a great place for additional tooling to come into play, but if our goal is to simplify the architecture footprint or there are constraints with procuring additional tools then consider the following methods as examples for moving forward.
 
-### Method 1 - Dynamic Common Table Expression (CTE) from Business Rules 
+### Method 1 - Dynamic Common Table Expression (CTE) from Business Rules
 Method 1 describes a stored procedure which is used to generate a Common Table Expression (CTE) for each of the business rules that are defined in the Validation Rules table. First a table is loaded with metadata about the Business Rule and the associated WHERE clause that will allow for the process to determine which rules fall outside the bounds defined by the rules. In the example provided we use Citibike Trips data that are leveraged as part of our online [Zero to Snowflake labs](https://s3.amazonaws.com/snowflake-workshop-lab/InpersonZTS_LabGuide.pdf). The data can be connected to via an External Stage to this S3 bucket URL [(s3://snowflake-workshop-lab/citibike-trips)](s3://snowflake-workshop-lab/citibike-trips).
 
 The example business rules that we will conduct are:
@@ -41,14 +41,18 @@ The net result of the procedure is an error column dynamically generated with da
 All business rules are kept in a single table repository. This centralizes all the rules and makes them easy to manage. Rules can be deprecated through a start/end date allowing them to naturally expire or manual obsolescence.
 
 **Cons**
-Any time you create a dynamic process, the probability of error due to complications increases. 
+Any time you create a dynamic process, the probability of error due to complications increases.
 
 ### Method 2 - Declarative Pipeline through concrete Views
+Method 2 requires a series of views, each that run their own validation. The approach is very similar to Method 1, in that you will be creating a series of views that return errors based on your testing criteria. See the Method 1 documentation above for ideas for creating validation rules. Once you have the views established, you can connect each into a BI tool for reporting and alerting, or optionally combine all errors into one final view for one single source of all errors, which can also be aggregated for reporting and alerting as well.
+
+The folder `Method2` walks through an example of setting up your views with two options for the final view of all errors combined.
+
 **Pros**
-Complicated business rules can be defined in more robust SQL. Cross database checks can be leveraged to include other data domains or lookup tables. 
+Complicated business rules can be defined in more robust SQL. Cross database checks, with joins and aggregation, can be leveraged to include other data domains or lookup tables.
 
 **Cons**
-The views, if not well managed, can create sprawl that makes the views difficult to understand or manage from a broader perspective.  Managing the lifecycle of a view is a manual or external process based on metadata.
+This is not a dynamic process, with a Stored Procdure doing the work for you; you will be required to manually create and maintain each view individually.  The views, if not well managed, can create sprawl that makes the views difficult to understand or manage from a broader perspective; for example, if you have 100 tests, you would have 100 individual views, rather than just 100 individual rows you'd create for Method 1.
 
 ### Method 3 - External Tables
 
@@ -65,7 +69,7 @@ Snowflake demos have been oriented around Citibike data that is provided publicl
 
 
 Example Data:
- 
+
   |TRIPDURATION|STARTTIME|STOPTIME|START_STATION_ID|START_STATION_NAME|START_STATION_LATITUDE|START_STATION_LONGITUDE|END_STATION_ID|END_STATION_NAME|END_STATION_LATITUDE|END_STATION_LONGITUDE|BIKEID|MEMBERSHIP_TYPE|USERTYPE|BIRTH_YEAR|GENDER|
  |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
  |1695|2013-06-09 15:07:05.000|2013-06-09 15:35:20.000|328|Watts St & Greenwich St|40.72405549|-74.00965965|195|Liberty St & Broadway|40.70905623|-74.01043382|17652||Customer||0|
@@ -82,7 +86,7 @@ This will translate into the following criteria in ANSI SQL:
 * date_from_parts(birth_year,month(current_Date()),day(current_date())) < dateadd(year,-150,current_date())
 * IFF(TRY_TO_DATE(STARTTIME::VARCHAR) IS NOT NULL,FALSE,TRUE)
 
-In the first rule the tripduration is recorded in seconds, so we multiple 60 seconds by 60 minutes by 24 hours to result in 1 day. I assumed that a bike ride would not lapse 24 hours, but upon inspection of the example data by running this rule we find that there are several observations that are 
+In the first rule the tripduration is recorded in seconds, so we multiple 60 seconds by 60 minutes by 24 hours to result in 1 day. I assumed that a bike ride would not lapse 24 hours, but upon inspection of the example data by running this rule we find that there are several observations that are
 
 In the second rule we are provided the birth year, so we generate a date from this using the DATE_FROM_PARTS functions and compare it to today's date - 150 years.
 

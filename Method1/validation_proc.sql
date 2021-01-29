@@ -38,7 +38,7 @@ while (rs_tables.next()) {
 		sqlText: "SELECT \"column_name\" AS NAME FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) where \"kind\" = 'COLUMN';"
 	});
 
-	//IF NO PRIMARY KEY GENERATE ONE BY COMBINING ALL COLUMNS WITH MD5 
+	//IF NO PRIMARY KEY GENERATE ONE BY COMBINING ALL COLUMNS WITH MD5
 	if (PRIMARY_KEY_COLUMN_NAME == null || PRIMARY_KEY_COLUMN_NAME == undefined) {
 		var res_columns = stmt_getcolumn_list.execute();
 		var md5_column = "";
