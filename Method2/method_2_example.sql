@@ -105,7 +105,7 @@ CREATE OR REPLACE VIEW all_errors_aggregated AS
          error_in_table
         ,error_message
         ,COUNT(*) AS number_of_errors
-        ,array_agg(error)
+        ,array_agg(error) AS all_errors
     FROM validation.all_errors
     GROUP BY 1,2
 ;
