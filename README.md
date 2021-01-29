@@ -29,9 +29,13 @@ The example business rules that we will conduct are:
 The first step will to be to generate a table to hold all of our business rules found [here](Method1/validation_rules.sql). We write criteria against the base table that will be applied to the WHERE clause in the CTE. Second, the [Data Validation](Method1/validation_proc.sql) stored procedure(SP) will read the business rules tables. For each base table, the SP gathers the rule collection and for each rule a CTE is created. The CTEs are joined back to the base table with a Primary Key. The stored procedure has an optional PK field which will help for more efficient joins back to the base table, but if a PK does not exist then the procedure will generate an MD5 hash based on the data in a row for the purposes of the join.
 
 -table
+
 --rule
 
-The net result of the procedure is an error table dynamically generated with data points for each observation/row and its associated error column.
+The net result of the procedure is an error column dynamically generated with data points for each observation/row and its associated error column. We leverage the unique capability of Snowflake to build our Error Results dynamically with a JSON object. This allows us to store the fluctuating number of rules tied directly to the row itself. This means as validation rules are added or removed (deprecated) the table definition doesn't need to change!
+
+<img src="images/screenshot_errors.png" alt="Errors in JSON" title="Errors in JSON" />
+
 
 **Pros**
 All business rules are kept in a single table repository. This centralizes all the rules and makes them easy to manage. Rules can be deprecated through a start/end date allowing them to naturally expire or manual obsolescence.
