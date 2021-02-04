@@ -94,7 +94,7 @@ In the final rule we simply attempt to convert a timestamp to a date to verify t
 
 ## Error Reporting with SnowSight
 
-<img src="images/Data_Validation_w_ Notes.png" alt="Data Validation" title="Data Validation" />
+<img src="images/SnowSightDashboard.png" alt="Snow Sight" title="Snow Sight Dashboard" />
 Snowsight is Snowflake's dashboarding tool for tracking metrics at scale. We can use it to create a dashboard that monitors the health of the data validation process that we've created.
 
 
