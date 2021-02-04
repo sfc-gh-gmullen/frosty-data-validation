@@ -55,6 +55,7 @@ Complicated business rules can be defined in more robust SQL. Cross database che
 This is not a dynamic process, with a Stored Procdure doing the work for you; you will be required to manually create and maintain each view individually.  The views, if not well managed, can create sprawl that makes the views difficult to understand or manage from a broader perspective; for example, if you have 100 tests, you would have 100 individual views, rather than just 100 individual rows you'd create for Method 1.
 
 ### Method 3 - External Tables
+Following a similar process with Method 2, Method 3 enables you to validate the data before it is ingested into Snowflake. By leveraging [External Tables](https://docs.snowflake.com/en/user-guide/tables-external-intro.html), Snowflake can run these validation processes over the data as it exists in blob storage before moving it into Snowflake. Therefore was can fix those files before we run into errors in the data platform.
 
 **Pros**
 Validates data from blob storage without moving into Snowflake. Benefits pre-validating the data before moving it into Snowflake allowing for remediation closer to the source.
