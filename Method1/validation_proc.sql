@@ -120,7 +120,7 @@ while (rs_tables.next()) {
 	} //END GENERATE CTE FOR EACH RULE
 
 	//BUILD AND JOIN FINAL QUERY
-	sql_cte_text = sql_cte_text + "\n\nSELECT current_timestamp() validated_timestamp," + rule_col + ") error_json," + table_name + ".* FROM (\nSELECT *" ;
+	sql_cte_text = sql_cte_text + "\n\nSELECT DISTINCT current_timestamp() validated_timestamp," + rule_col + ") error_json," + table_name + ".* FROM (\nSELECT *" ;
 	if (add_md5_col) { sql_cte_text += "," + md5_column;}
 	sql_cte_text += "\nFROM " + db_name + "." + schema_name + "." + table_name + ") " + table_name + sql_join_text + where_clause;
 
@@ -142,25 +142,32 @@ while (rs_tables.next()) {
 	rules_results = snowflake.createStatement({sqlText: sql_cte_text}).execute();
 
 	//GENERATE JOB STATISTICS FOR CURRENT TABLE
-	total_rec_results = snowflake.createStatement({sqlText: "select count(*) from " + table_name}).execute();
+	total_rec_results = snowflake.createStatement({sqlText: "select count(*) from " + db_name + "." + schema_name + "." + table_name}).execute();
 	total_rec_results.next()
 	total_rec_processed = total_rec_results.getColumnValue(1);
-	total_errors_results = snowflake.createStatement({sqlText: "select count(*) from " + error_table_name + " where validated_timestamp = (select max(validated_timestamp) from "+error_table_name+")"}).execute();
+	total_errors_results = snowflake.createStatement({sqlText: "select count(*) from " + error_table_name + " where validated_timestamp = (select max(validated_timestamp) from "
+		+ error_table_name+")"}).execute();
 	total_errors_results.next()
 	total_errors_processed = total_errors_results.getColumnValue(1);
 	job_table_name = "JOB_SUMMARY";
 
 	//CHECK IF JOB SUMMARY TABLE EXISTS. CREATE OR INSERT.
 	job_check_res = snowflake.createStatement({
-		sqlText: "select * from " + db_name + ".information_schema.tables where table_name ilike '" + job_table_name + "';"
+		sqlText: "CREATE TABLE IF NOT EXISTS JOB_SUMMARY ("+
+				"RECORDS_PROCESSED NUMERIC,"+
+				"RECORDS_W_ERRORS NUMERIC,"+
+				"DATE_PROCESSED TIMESTAMP_LTZ(9),"+
+				"DB_NAME VARCHAR,"+
+				"SCHEMA_NAME VARCHAR,"+
+				"TABLE_NAME VARCHAR,"+
+				"NUM_OF_RULES NUMERIC" +
+			");"
 	}).execute();
 
-	sql_job_text = "SELECT " + total_rec_processed + " records_processed," + total_errors_processed + " records_w_errors, current_timestamp() date_processed, '" +  db_name +"' db_name,'" + schema_name + "' schema_name,'" + table_name + "' table_name,"+ rule_count+" num_of_rules";
-	if (job_check_res.getRowCount() == 0) {
-		sql_job_text = "CREATE TABLE IF NOT EXISTS " + job_table_name + " AS " + sql_job_text;
-	} else {
-		sql_job_text = "INSERT INTO " + job_table_name + " " + sql_job_text;
-	}
+	sql_job_text = "SELECT " + total_rec_processed + " records_processed," + total_errors_processed + " records_w_errors, current_timestamp() date_processed, '"
+		+  db_name +"' db_name,'" + schema_name + "' schema_name,'" + table_name + "' table_name,"+ rule_count+" num_of_rules";
+	sql_job_text = "INSERT INTO " + job_table_name + " " + sql_job_text;
+
 
 	//EXECUTE JOB STATISTICS
 	snowflake.createStatement({	sqlText: sql_job_text}).execute();
@@ -168,7 +175,7 @@ while (rs_tables.next()) {
 
 	//POPULATE RETURN VALUE
 	table_count += 1;
-	return_results.push("Error Table_" + table_count + ": " + error_table_name);
+	return_results.push("Error Table_" + table_count + ": " + error_table_name, ". Total: " + total_rec_processed + ". Errors:  " + total_errors_processed);
 
 } // while(rs_tables.next())
 // END TABLE LOOP
