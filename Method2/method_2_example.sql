@@ -18,7 +18,7 @@ CREATE SCHEMA IF NOT EXISTS validation;
     The goal of all of the views is to only return errors. Hopefully, if all is
     well with your data, the views will return 0 rows.
 
-    The following views are three individual tests:
+    The following views are four individual tests:
     1) Return trips that are longer than 24 hours
     2) Return birth years that are older than 150 years
     3) Return trips where the start time was more than 25 years ago
