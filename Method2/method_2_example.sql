@@ -120,7 +120,7 @@ CREATE OR REPLACE VIEW all_errors AS
 
     SCHEDULING: You will want to schedule this (maybe once at night or run it
     manually for each new validation view you create, so the new views can be
-    added to this aggregated view
+    added to this aggregated view)
 */
 
 CREATE OR REPLACE PROCEDURE validation.create_aggregated_validation()
