@@ -89,6 +89,7 @@ while (rs_tables.next()) {
 		rule_count+=1;
 		//check valid syntax
 		rule_name = rs_rules.getColumnValue('RULE_NAME');
+		error_message = rs_rules.getColumnValue('ERROR_MESSAGE');
 		db_name = rs_rules.getColumnValue('DATABASE_NAME');
 		schema_name = rs_rules.getColumnValue('SCHEMA_NAME');
 		table_name = rs_rules.getColumnValue('TABLE_NAME');
@@ -96,15 +97,18 @@ while (rs_tables.next()) {
 		where_condition = rs_rules.getColumnValue('WHERE_CONDITION');
 
 		//BUILD CTE AND ERROR_COLUMN
+		//kvp = "OBJECT_CONSTRUCT('" + rule_name + "'," + rule_name + ",'" + rule_name + "_error_message'," +  rule_name + "_error_message" + ")";
+		kvp = rule_name;
 		if (is_first_cte) {
 			sql_cte_text = "WITH ";
-			rule_col = "OBJECT_CONSTRUCT('" + rule_name + "'," + rule_name;
+			rule_col = "ARRAY_CONSTRUCT_COMPACT(" + kvp;
 		} else {
 			sql_cte_text = sql_cte_text + "\n\n, ";
-			rule_col += ",'" + rule_name + "'," + rule_name;
+			rule_col += "," + kvp ;
 		}
 
-		sql_cte_text = sql_cte_text + rule_name + " AS ( SELECT 1 AS " + rule_name + ", " + md5_column + "\nFROM " + db_name + "." + schema_name + "." + table_name +
+		sql_cte_text = sql_cte_text + rule_name + " AS ( SELECT OBJECT_CONSTRUCT('" + rule_name + "', 1, '" + rule_name + "_error_message', \'" + error_message + "\') AS " + rule_name + ", "
+		+ md5_column + "\nFROM " + db_name + "." + schema_name + "." + table_name +
 			"\nWHERE " + where_condition + ")";
 
 		//Build SQL. Check if first criteria
