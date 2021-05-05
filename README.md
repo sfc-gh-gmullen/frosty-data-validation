@@ -47,6 +47,7 @@ Any time you create a dynamic process, the probability of error due to complicat
 Method 2 requires a series of views, each that run their own validation. The approach is very similar to Method 1, in that you will be creating a series of views that return errors based on your testing criteria. See the Method 1 documentation above for ideas for creating validation rules. Once you have the views established, you can connect each into a BI tool for reporting and alerting, or optionally combine all errors into one final view for one single source of all errors, which can also be aggregated for reporting and alerting as well.
 
 The folder `Method2` walks through an example of setting up your views with two options for the final view of all errors combined.
+<img src="images/Views.png" alt="Views" title="Views" />
 
 **Pros**
 Complicated business rules can be defined in more robust SQL. Cross database checks, with joins and aggregation, can be leveraged to include other data domains or lookup tables.
